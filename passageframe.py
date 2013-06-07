@@ -136,6 +136,29 @@ class PassageFrame (wx.Frame):
         
         # body text
         
+        class DrawPanel(wx.Panel):
+            """Draw a line to a panel."""
+
+            def __init__(self, parent):
+                wx.Panel.__init__(self, parent)
+                self.Bind(wx.EVT_PAINT, self.OnPaint)
+                self.Bind(wx.EVT_LEFT_DOWN, self.OnClick)
+                self.lastDown = None
+                self.SetBackgroundColour("WHITE")
+
+            def OnPaint(self, event=None):
+                dc = wx.PaintDC(self)
+                dc.Clear()
+                if self.lastDown:
+                    dc.SetPen(wx.Pen(wx.BLACK, 4))
+                    dc.DrawLine(0, 0, self.lastDown.x, self.lastDown.y)
+                
+            def OnClick(self, event=None):
+                self.lastDown = event.GetPosition()
+                self.Refresh()
+
+        self.drawInput = DrawPanel(self.panel)
+        
         self.bodyInput = wx.stc.StyledTextCtrl(self.panel, style = wx.TE_PROCESS_TAB | wx.BORDER_SUNKEN)
         self.bodyInput.SetUseHorizontalScrollBar(False)
         self.bodyInput.SetMargins(8, 8)
@@ -167,6 +190,7 @@ class PassageFrame (wx.Frame):
         # final layout
         
         allSizer.Add(self.topControls, flag = wx.TOP | wx.LEFT | wx.RIGHT | wx.EXPAND, border = metrics.size('windowBorder'))
+        allSizer.Add(self.drawInput, proportion = 1, flag = wx.TOP | wx.EXPAND, border = metrics.size('relatedControls'))
         allSizer.Add(self.bodyInput, proportion = 1, flag = wx.TOP | wx.EXPAND, border = metrics.size('relatedControls'))
         self.lexer = TweeLexer(self.bodyInput, self)
         self.applyPrefs()
