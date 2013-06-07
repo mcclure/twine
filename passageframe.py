@@ -143,18 +143,22 @@ class PassageFrame (wx.Frame):
                 wx.Panel.__init__(self, parent)
                 self.Bind(wx.EVT_PAINT, self.OnPaint)
                 self.Bind(wx.EVT_LEFT_DOWN, self.OnClick)
-                self.lastDown = None
                 self.SetBackgroundColour("WHITE")
+                self.lines = []
+                self.currentLine = []
 
             def OnPaint(self, event=None):
                 dc = wx.PaintDC(self)
                 dc.Clear()
-                if self.lastDown:
+                for line in self.lines:
                     dc.SetPen(wx.Pen(wx.BLACK, 4))
-                    dc.DrawLine(0, 0, self.lastDown.x, self.lastDown.y)
+                    dc.DrawLine(line[0].x, line[0].y, line[1].x, line[1].y)
                 
             def OnClick(self, event=None):
-                self.lastDown = event.GetPosition()
+                self.currentLine.append( event.GetPosition() )
+                if len(self.currentLine) > 1:
+                    self.lines.append( self.currentLine )
+                    self.currentLine = []
                 self.Refresh()
 
         self.drawInput = DrawPanel(self.panel)
