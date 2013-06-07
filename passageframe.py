@@ -136,6 +136,16 @@ class PassageFrame (wx.Frame):
         
         # body text
         
+        class Canvoid:
+            def __init__(self, template=None):
+                self.points = []
+                if template:
+                    self.penColor = template.penColor
+                    self.brushColor = template.brushColor
+                else:
+                    self.penColor = "BLACK"
+                    self.brushColor = "RED"
+        
         class DrawPanel(wx.Panel):
             """Draw a line to a panel."""
 
@@ -144,21 +154,23 @@ class PassageFrame (wx.Frame):
                 self.Bind(wx.EVT_PAINT, self.OnPaint)
                 self.Bind(wx.EVT_LEFT_DOWN, self.OnClick)
                 self.SetBackgroundColour("WHITE")
-                self.lines = []
-                self.currentLine = []
+                self.canvoids = []
+                self.currentCanvoid = None
 
             def OnPaint(self, event=None):
                 dc = wx.PaintDC(self)
                 dc.Clear()
-                for line in self.lines:
-                    dc.SetPen(wx.Pen(wx.BLACK, 4))
-                    dc.DrawLine(line[0].x, line[0].y, line[1].x, line[1].y)
+                for canvoid in self.canvoids:
+                    dc.SetPen(wx.Pen(canvoid.penColor, 4))
+                    dc.SetBrush(wx.Brush(canvoid.brushColor))
+                    dc.DrawPolygon(canvoid.points)
                 
             def OnClick(self, event=None):
-                self.currentLine.append( event.GetPosition() )
-                if len(self.currentLine) > 1:
-                    self.lines.append( self.currentLine )
-                    self.currentLine = []
+                if not self.currentCanvoid:
+                    self.currentCanvoid = Canvoid()
+                self.currentCanvoid.points.append( event.GetPosition() )
+                if len(self.currentCanvoid.points) == 2:
+                    self.canvoids.append( self.currentCanvoid )
                 self.Refresh()
 
         self.drawInput = DrawPanel(self.panel)
