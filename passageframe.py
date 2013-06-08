@@ -148,14 +148,18 @@ class PassageFrame (wx.Frame):
         
         class DrawPanel(wx.Panel):
             """Draw a line to a panel."""
-
+            
+            CROSS=5
+            
             def __init__(self, parent):
                 wx.Panel.__init__(self, parent)
                 self.Bind(wx.EVT_PAINT, self.OnPaint)
                 self.Bind(wx.EVT_LEFT_DOWN, self.OnClick)
+                self.Bind(wx.EVT_MOTION, self.OnMove)
                 self.SetBackgroundColour("WHITE")
                 self.canvoids = []
                 self.currentCanvoid = None
+                self.currentCursor = None
 
             def OnPaint(self, event=None):
                 dc = wx.PaintDC(self)
@@ -164,13 +168,23 @@ class PassageFrame (wx.Frame):
                     dc.SetPen(wx.Pen(canvoid.penColor, 4))
                     dc.SetBrush(wx.Brush(canvoid.brushColor))
                     dc.DrawPolygon(canvoid.points)
+                if self.currentCursor:
+                    dc.SetPen(wx.Pen("BLACK", 1))
+                    dc.DrawLine(self.currentCursor.x - DrawPanel.CROSS, self.currentCursor.y + DrawPanel.CROSS, self.currentCursor.x + DrawPanel.CROSS, self.currentCursor.y - DrawPanel.CROSS)
+                    dc.DrawLine(self.currentCursor.x - DrawPanel.CROSS, self.currentCursor.y - DrawPanel.CROSS, self.currentCursor.x + DrawPanel.CROSS, self.currentCursor.y + DrawPanel.CROSS)
                 
             def OnClick(self, event=None):
+                position = event.GetPosition()
+                self.currentCursor = position
                 if not self.currentCanvoid:
                     self.currentCanvoid = Canvoid()
-                self.currentCanvoid.points.append( event.GetPosition() )
+                self.currentCanvoid.points.append( position )
                 if len(self.currentCanvoid.points) == 2:
                     self.canvoids.append( self.currentCanvoid )
+                self.Refresh()
+            
+            def OnMove(self, event=None):
+                self.currentCursor = event.GetPosition()
                 self.Refresh()
 
         self.drawInput = DrawPanel(self.panel)
