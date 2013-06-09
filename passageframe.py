@@ -145,6 +145,9 @@ class PassageFrame (wx.Frame):
                 else:
                     self.penColor = "BLACK"
                     self.brushColor = "RED"
+            
+            def pop(self):
+                self.points.pop()
         
         class DrawPanel(wx.Panel):
             """Draw a line to a panel."""
@@ -159,7 +162,9 @@ class PassageFrame (wx.Frame):
                 self.SetBackgroundColour("WHITE")
                 self.canvoids = []
                 self.currentCanvoid = None
+                self.transientPoint = None
                 self.currentCursor = None
+                self.transientCircle = False
 
             def OnPaint(self, event=None):
                 dc = wx.PaintDC(self)
@@ -170,21 +175,52 @@ class PassageFrame (wx.Frame):
                     dc.DrawPolygon(canvoid.points)
                 if self.currentCursor:
                     dc.SetPen(wx.Pen("BLACK", 1))
-                    dc.DrawLine(self.currentCursor.x - DrawPanel.CROSS, self.currentCursor.y + DrawPanel.CROSS, self.currentCursor.x + DrawPanel.CROSS, self.currentCursor.y - DrawPanel.CROSS)
-                    dc.DrawLine(self.currentCursor.x - DrawPanel.CROSS, self.currentCursor.y - DrawPanel.CROSS, self.currentCursor.x + DrawPanel.CROSS, self.currentCursor.y + DrawPanel.CROSS)
+                    if not self.transientCircle:
+                        dc.DrawLine(self.currentCursor.x - DrawPanel.CROSS, self.currentCursor.y + DrawPanel.CROSS, self.currentCursor.x + DrawPanel.CROSS, self.currentCursor.y - DrawPanel.CROSS)
+                        dc.DrawLine(self.currentCursor.x - DrawPanel.CROSS, self.currentCursor.y - DrawPanel.CROSS, self.currentCursor.x + DrawPanel.CROSS, self.currentCursor.y + DrawPanel.CROSS)
+                    else:
+                        dc.SetBrush(wx.Brush("WHITE", wx.TRANSPARENT))
+                        dc.DrawCirclePoint(self.transientPoint, 10)
+                
+            def cap(self):
+                if self.transientPoint:
+                    self.currentCanvoid.pop()
+                self.currentCanvoid = None
+                self.transientPoint = None
+                self.transientCircle = False
                 
             def OnClick(self, event=None):
                 position = event.GetPosition()
                 self.currentCursor = position
-                if not self.currentCanvoid:
-                    self.currentCanvoid = Canvoid()
-                self.currentCanvoid.points.append( position )
-                if len(self.currentCanvoid.points) == 2:
-                    self.canvoids.append( self.currentCanvoid )
+                if self.transientCircle:
+                    self.cap()
+                else:
+                    if not self.currentCanvoid:
+                        self.currentCanvoid = Canvoid()
+                        self.currentCanvoid.points.append( position )
+                        self.canvoids.append( self.currentCanvoid )
+                    self.transientPoint = wx.Point( position.x, position.y )
+                    self.currentCanvoid.points.append( self.transientPoint )
                 self.Refresh()
             
             def OnMove(self, event=None):
                 self.currentCursor = event.GetPosition()
+                if self.transientPoint:
+                    def pointDistSq(a,b):
+                        c = a - b
+                        return c.x*c.x + c.y*c.y
+                    def pointCopy(a,b):
+                        a.x = b.x
+                        a.y = b.y
+                        
+                    initPoint = self.currentCanvoid.points[0]
+                    self.transientCircle = len(self.currentCanvoid.points)>2 and pointDistSq(initPoint,self.currentCursor)<100
+                    
+                    if self.transientCircle:
+                        pointCopy(self.transientPoint, initPoint)
+                    else:
+                        pointCopy(self.transientPoint, self.currentCursor)
+                        
                 self.Refresh()
 
         self.drawInput = DrawPanel(self.panel)
