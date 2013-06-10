@@ -39,6 +39,7 @@ class PassageWidget:
             self.passage = tiddlywiki.Tiddler('')
             self.passage.title = title
             self.passage.text = text
+            self.passage.draw = None
             self.selected = False
             self.pos = list(pos)
             self.findSpace()

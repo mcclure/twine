@@ -137,17 +137,32 @@ class PassageFrame (wx.Frame):
         # body text
         
         class Canvoid:
-            def __init__(self, template=None):
+            def __init__(self, template=None, serial=None):
                 self.points = []
+                # Defaults
                 if template:
                     self.penColor = template.penColor
                     self.brushColor = template.brushColor
                 else:
                     self.penColor = "BLACK"
                     self.brushColor = "RED"
+                # Override
+                if serial:
+                    self.penColor = serial["penColor"]
+                    self.brushColor = serial["brushColor"]
+                    for point in serial["points"]:
+                        self.points.append(wx.Point(point[0],point[1])) # From tuple
+            
+            def initFrom(serial):
+                return Canvoid(serial=serial)
             
             def pop(self):
                 self.points.pop()
+                
+            def serialize():
+                return {"points": map(wx.Point.Get, self.points), # Map to tuples
+                    "brushColor":self.brushColor,
+                    "penColor":self.penColor,}
         
         class DrawPanel(wx.Panel):
             """Draw a line to a panel."""
@@ -159,12 +174,26 @@ class PassageFrame (wx.Frame):
                 self.Bind(wx.EVT_PAINT, self.OnPaint)
                 self.Bind(wx.EVT_LEFT_DOWN, self.OnClick)
                 self.Bind(wx.EVT_MOTION, self.OnMove)
+                self.resetFrom()
+
+            def resetFrom(self, serial=None):
+                if serial:
+                    canvoids = map(Canvoid.initFrom, serial["canvoids"])
+                else:
+                    canvoids = []
+                    
+                self.canvoids = canvoids
                 self.SetBackgroundColour("WHITE")
                 self.canvoids = []
                 self.currentCanvoid = None
                 self.transientPoint = None
                 self.currentCursor = None
                 self.transientCircle = False
+                
+            def serialize(self):
+                return {
+                    "canvoids": map(Canvoid.serialize, self.canvoids),
+                }
 
             def OnPaint(self, event=None):
                 dc = wx.PaintDC(self)
@@ -287,6 +316,7 @@ class PassageFrame (wx.Frame):
         """Updates the inputs based on the passage's state."""
         self.titleInput.SetValue(self.widget.passage.title)
         self.bodyInput.SetText(self.widget.passage.text)
+        self.drawInput.resetFrom( self.widget.passage.draw )
     
         tags = ''
         
@@ -303,6 +333,7 @@ class PassageFrame (wx.Frame):
         else:
             self.widget.passage.title = 'Untitled Passage'
         self.widget.passage.text = self.bodyInput.GetText()
+        self.widget.passage.draw = self.drawInput.serialize()
         self.widget.passage.tags = []
         self.widget.clearPaintCache()
         
