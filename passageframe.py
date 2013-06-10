@@ -153,21 +153,28 @@ class PassageFrame (wx.Frame):
                     for point in serial["points"]:
                         self.points.append(wx.Point(point[0],point[1])) # From tuple
             
+            @staticmethod
             def initFrom(serial):
                 return Canvoid(serial=serial)
             
             def pop(self):
                 self.points.pop()
                 
-            def serialize():
+            def serialize(self):
                 return {"points": map(wx.Point.Get, self.points), # Map to tuples
                     "brushColor":self.brushColor,
                     "penColor":self.penColor,}
+        
+        class DrawPanelUpdateEvent(wx.PyEvent):
+            pass
         
         class DrawPanel(wx.Panel):
             """Draw a line to a panel."""
             
             CROSS=5
+            EVT_UPDATE_ID = wx.NewEventType()
+            EVT_UPDATE = wx.PyEventBinder(EVT_UPDATE_ID, 1)
+
             
             def __init__(self, parent):
                 wx.Panel.__init__(self, parent)
@@ -184,11 +191,12 @@ class PassageFrame (wx.Frame):
                     
                 self.canvoids = canvoids
                 self.SetBackgroundColour("WHITE")
-                self.canvoids = []
                 self.currentCanvoid = None
                 self.transientPoint = None
                 self.currentCursor = None
                 self.transientCircle = False
+                if serial:
+                    self.Refresh()
                 
             def serialize(self):
                 return {
@@ -217,6 +225,7 @@ class PassageFrame (wx.Frame):
                 self.currentCanvoid = None
                 self.transientPoint = None
                 self.transientCircle = False
+                wx.PostEvent(self.GetEventHandler(), DrawPanelUpdateEvent(self.GetId(), DrawPanel.EVT_UPDATE_ID))
                 
             def OnClick(self, event=None):
                 position = event.GetPosition()
@@ -300,6 +309,7 @@ class PassageFrame (wx.Frame):
         self.titleInput.Bind(wx.EVT_TEXT, self.syncPassage)
         self.tagsInput.Bind(wx.EVT_TEXT, self.syncPassage)
         self.bodyInput.Bind(wx.stc.EVT_STC_CHANGE, self.syncPassage)
+        self.drawInput.Bind(DrawPanel.EVT_UPDATE, self.syncPassage)
         self.bodyInput.Bind(wx.stc.EVT_STC_START_DRAG, self.prepDrag)
         self.Bind(wx.EVT_CLOSE, self.closeFullscreen)
         self.Bind(wx.EVT_MENU_OPEN, self.updateSubmenus)
