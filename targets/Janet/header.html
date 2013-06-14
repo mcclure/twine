@@ -254,6 +254,10 @@ History.prototype.close = function (B) {
     }
 };
 History.prototype.display = function (E, C, A) {
+    // Mod away from Jonah, display per-screen instead of column
+	if ((A != 'quietly') && (A != 'offscreen'))
+		removeChildren(document.getElementById('passages'));
+
     var B = C;
     while (B && (B.className.indexOf("passage") == -1)) {
         if (B.parentNode.id != 'passages') {
