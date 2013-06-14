@@ -326,7 +326,13 @@ class PassageFrame (wx.Frame):
         """Updates the inputs based on the passage's state."""
         self.titleInput.SetValue(self.widget.passage.title)
         self.bodyInput.SetText(self.widget.passage.text)
-        self.drawInput.resetFrom( self.widget.passage.draw )
+
+        try: # Some files will not have pickled a draw member.
+            draw = self.widget.passage.draw
+        except AttributeError:
+            draw = None
+        
+        self.drawInput.resetFrom( draw )
     
         tags = ''
         
