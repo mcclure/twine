@@ -737,6 +737,16 @@ Passage.prototype.render = function () {
         C.onclick = Passage.toolbarItems[B].activate
     }
     var A = insertElement(E, 'div', '', 'body');
+    
+    // The only important thing about Janet
+    var canvas = insertElement(A, 'canvas', '', 'draw');
+    canvas.style.position="fixed"; canvas.style.top = 0; canvas.style.left = 0;
+    canvas.style.height="100%";
+    var ctx=canvas.getContext("2d");
+    ctx.rect(20,20,150,100);
+    ctx.fillStyle="red";
+    ctx.fill();
+
     new Wikifier(A, this.text);
     E.onmouseover = function () {
         E.className += ' selected';
